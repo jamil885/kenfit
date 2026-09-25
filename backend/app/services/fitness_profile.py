@@ -1,11 +1,12 @@
 from datetime import date
 
 from sqlalchemy.orm import Session
-
 from app.repositories.fitness_profile import (
     create_fitness_profile,
     get_fitness_profile_by_user_id,
+    update_fitness_profile,
 )
+
 
 
 def register_fitness_profile(
@@ -45,4 +46,23 @@ def get_user_fitness_profile(
     return get_fitness_profile_by_user_id(
         db,
         user_id,
+    )
+
+def update_user_fitness_profile(
+    db: Session,
+    user_id: int,
+    data: dict,
+):
+    profile = get_fitness_profile_by_user_id(
+        db,
+        user_id,
+    )
+
+    if profile is None:
+        raise ValueError("Fitness profile not found")
+
+    return update_fitness_profile(
+        db=db,
+        fitness_profile=profile,
+        data=data,
     )

@@ -40,3 +40,16 @@ def create_fitness_profile(
     db.refresh(fitness_profile)
 
     return fitness_profile
+
+def update_fitness_profile(
+    db: Session,
+    fitness_profile: FitnessProfile,
+    data: dict,
+) -> FitnessProfile:
+    for field, value in data.items():
+        setattr(fitness_profile, field, value)
+
+    db.commit()
+    db.refresh(fitness_profile)
+
+    return fitness_profile

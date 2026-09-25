@@ -7,10 +7,12 @@ from app.models.user import User
 from app.schemas.fitness_profile import (
     FitnessProfileCreate,
     FitnessProfileResponse,
+    FitnessProfileUpdate,
 )
 from app.services.fitness_profile import (
     get_user_fitness_profile,
     register_fitness_profile,
+    update_user_fitness_profile,
 )
 
 router = APIRouter(
@@ -68,3 +70,26 @@ def get_profile(
         )
 
     return profile
+
+
+@router.put(
+    "",
+    response_model=FitnessProfileResponse,
+)
+def update_profile(
+    profile: FitnessProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        return update_user_fitness_profile(
+            db=db,
+            user_id=current_user.id,
+            data=profile.model_dump(exclude_unset=True),
+        )
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
