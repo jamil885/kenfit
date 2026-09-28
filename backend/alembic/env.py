@@ -10,6 +10,8 @@ from app.models.user import User
 from app.models.fitness_profile import FitnessProfile
 from app.models.muscle_group import MuscleGroup
 from app.models.exercise_muscle import ExerciseMuscle
+from app.models.workout import Workout
+from app.models.workout_exercise import WorkoutExercise
 config = context.config
 
 if config.config_file_name is not None:
