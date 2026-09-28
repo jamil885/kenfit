@@ -71,3 +71,23 @@ def delete_workout_exercise(
 ) -> None:
     db.delete(workout_exercise)
     db.commit()
+
+def update_workout_exercise(
+    db: Session,
+    workout_exercise: WorkoutExercise,
+) -> WorkoutExercise:
+    db.commit()
+    db.refresh(workout_exercise)
+
+    return workout_exercise
+
+def save_workout_exercise_order(
+    db: Session,
+    workout_exercises: list[WorkoutExercise],
+) -> list[WorkoutExercise]:
+    db.commit()
+
+    for workout_exercise in workout_exercises:
+        db.refresh(workout_exercise)
+
+    return workout_exercises

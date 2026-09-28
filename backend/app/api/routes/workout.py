@@ -13,6 +13,8 @@ from app.schemas.workout import (
 from app.schemas.workout_exercise import (
     WorkoutExerciseCreate,
     WorkoutExerciseResponse,
+    WorkoutExerciseReorder,
+    WorkoutExerciseUpdate,
 )
 
 from app.services.workout import (
@@ -26,6 +28,8 @@ from app.services.workout_exercise import (
     add_exercise_to_workout,
     get_exercises_for_workout,
     remove_exercise_from_workout,
+    update_exercise_in_workout,
+    reorder_workout_exercises,
 )
 
 
@@ -171,3 +175,39 @@ def delete_workout_exercise(
     )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.patch(
+    "/{workout_id}/exercises/{workout_exercise_id}",
+    response_model=WorkoutExerciseResponse,
+)
+def update_workout_exercise(
+    workout_id: int,
+    workout_exercise_id: int,
+    data: WorkoutExerciseUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return update_exercise_in_workout(
+        db=db,
+        user_id=current_user.id,
+        workout_id=workout_id,
+        workout_exercise_id=workout_exercise_id,
+        data=data,
+    )
+
+@router.patch(
+    "/{workout_id}/exercises/reorder",
+    response_model=list[WorkoutExerciseResponse],
+)
+def reorder_exercises(
+    workout_id: int,
+    data: WorkoutExerciseReorder,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return reorder_workout_exercises(
+        db=db,
+        user_id=current_user.id,
+        workout_id=workout_id,
+        data=data,
+    )
