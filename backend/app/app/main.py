@@ -7,6 +7,7 @@ from app.core.database import engine
 from app.api.routes.fitness_profile import router as fitness_profile_router
 from app.api.routes.exercise import router as exercise_router
 from app.api.routes.workout import router as workouts_router
+from app.api.routes.splits import router as splits_router
 
 
 app = FastAPI(
@@ -19,6 +20,7 @@ app.include_router(auth_router)
 app.include_router(fitness_profile_router)
 app.include_router(exercise_router)
 app.include_router(workouts_router)
+app.include_router(splits_router)
 
 @app.get("/health")
 def health_check():

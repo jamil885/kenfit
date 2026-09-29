@@ -12,6 +12,8 @@ from app.models.muscle_group import MuscleGroup
 from app.models.exercise_muscle import ExerciseMuscle
 from app.models.workout import Workout
 from app.models.workout_exercise import WorkoutExercise
+from app.models.split import Split
+from app.models.split_day import SplitDay
 config = context.config
 
 if config.config_file_name is not None:
