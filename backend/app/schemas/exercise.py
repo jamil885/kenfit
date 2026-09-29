@@ -73,6 +73,8 @@ class ExerciseMuscleResponse(BaseModel):
 
 class ExerciseResponse(BaseModel):
     id: int
+    owner_id: int | None
+    source: str
 
     name: str
     description: str | None

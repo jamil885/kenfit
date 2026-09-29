@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -55,6 +55,18 @@ class Exercise(Base):
         nullable=True,
     )
 
+    owner_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
+    source: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="SYSTEM",
+    )
+
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -72,3 +84,4 @@ class Exercise(Base):
         back_populates="exercise",
         cascade="all, delete-orphan",
     )
+owner = relationship("User")

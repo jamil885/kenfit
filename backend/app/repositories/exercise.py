@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.models.exercise import Exercise
@@ -30,15 +30,21 @@ def get_exercise_by_id(
 
 def get_exercises(
     db: Session,
+    owner_id: int,
 ) -> list[Exercise]:
     result = db.execute(
         select(Exercise)
-        .where(Exercise.is_active.is_(True))
+        .where(
+            Exercise.is_active.is_(True),
+            or_(
+                Exercise.source == "SYSTEM",
+                Exercise.owner_id == owner_id,
+            ),
+        )
         .order_by(Exercise.id)
     )
 
     return list(result.scalars().all())
-
 
 def update_exercise(
     db: Session,

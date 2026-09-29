@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
 from app.core.security import get_current_user
+from app.db.session import get_db
 from app.models.user import User
 from app.schemas.exercise import (
     ExerciseCreate,
@@ -11,11 +11,12 @@ from app.schemas.exercise import (
 )
 from app.services.exercise import (
     create_user_exercise,
+    delete_user_exercise,
     get_exercise,
     list_exercises,
     update_user_exercise,
-    delete_user_exercise,
 )
+
 
 router = APIRouter(
     prefix="/exercises",
@@ -35,15 +36,16 @@ def create_exercise(
 ):
     try:
         return create_user_exercise(
-            db,
-            data,
+            db=db,
+            user_id=current_user.id,
+            data=data,
         )
 
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
-        )
+        ) from exc
 
 
 @router.get(
@@ -54,7 +56,10 @@ def get_exercises(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return list_exercises(db)
+   return list_exercises(
+    db=db,
+    user_id=current_user.id,
+)
 
 
 @router.get(
@@ -67,9 +72,10 @@ def get_exercise_by_id(
     current_user: User = Depends(get_current_user),
 ):
     exercise = get_exercise(
-        db,
-        exercise_id,
-    )
+    db=db,
+    user_id=current_user.id,
+    exercise_id=exercise_id,
+)
 
     if exercise is None:
         raise HTTPException(
@@ -92,9 +98,10 @@ def update_exercise(
 ):
     try:
         exercise = update_user_exercise(
-            db,
-            exercise_id,
-            data,
+            db=db,
+            user_id=current_user.id,
+            exercise_id=exercise_id,
+            data=data,
         )
 
         if exercise is None:
@@ -105,11 +112,17 @@ def update_exercise(
 
         return exercise
 
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
-        )
+        ) from exc
 
 
 @router.delete(
@@ -121,13 +134,21 @@ def delete_exercise(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    deleted = delete_user_exercise(
-        db,
-        exercise_id,
-    )
-
-    if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Exercise not found",
+    try:
+        deleted = delete_user_exercise(
+            db=db,
+            user_id=current_user.id,
+            exercise_id=exercise_id,
         )
+
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Exercise not found",
+            )
+
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc

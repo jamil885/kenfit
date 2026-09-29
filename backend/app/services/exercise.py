@@ -5,17 +5,17 @@ from app.models.exercise import Exercise
 from app.models.exercise_muscle import ExerciseMuscle
 from app.models.muscle_group import MuscleGroup
 from app.repositories.exercise import (
-    create_exercise,
+    delete_exercise,
     get_exercise_by_id,
     get_exercises,
     update_exercise,
-    delete_exercise,
 )
 from app.schemas.exercise import ExerciseCreate, ExerciseUpdate
 
 
 def create_user_exercise(
     db: Session,
+    user_id: int,
     data: ExerciseCreate,
 ) -> Exercise:
     exercise = Exercise(
@@ -27,6 +27,8 @@ def create_user_exercise(
         equipment=data.equipment,
         difficulty=data.difficulty,
         instructions=data.instructions,
+        owner_id=user_id,
+        source="USER",
     )
 
     db.add(exercise)
@@ -40,6 +42,7 @@ def create_user_exercise(
         ).scalar_one_or_none()
 
         if muscle_group is None:
+            db.rollback()
             raise ValueError(
                 f"Muscle group {muscle.muscle_group_id} does not exist"
             )
@@ -60,22 +63,38 @@ def create_user_exercise(
 
 def get_exercise(
     db: Session,
+    user_id: int,
     exercise_id: int,
 ) -> Exercise | None:
-    return get_exercise_by_id(
-        db,
-        exercise_id,
+    exercise = get_exercise_by_id(
+        db=db,
+        exercise_id=exercise_id,
     )
+
+    if exercise is None:
+        return None
+
+    if (
+        exercise.source != "SYSTEM"
+        and exercise.owner_id != user_id
+    ):
+        return None
+
+    return exercise
 
 
 def list_exercises(
     db: Session,
+    user_id: int,
 ) -> list[Exercise]:
-    return get_exercises(db)
-
+    return get_exercises(
+        db=db,
+        owner_id=user_id,
+    )
 
 def update_user_exercise(
     db: Session,
+    user_id: int,
     exercise_id: int,
     data: ExerciseUpdate,
 ) -> Exercise | None:
@@ -86,6 +105,11 @@ def update_user_exercise(
 
     if exercise is None:
         return None
+
+    if exercise.source != "USER" or exercise.owner_id != user_id:
+        raise PermissionError(
+            "You do not have permission to modify this exercise"
+        )
 
     update_data = data.model_dump(
         exclude_unset=True,
@@ -106,6 +130,7 @@ def update_user_exercise(
             ).scalar_one_or_none()
 
             if muscle_group is None:
+                db.rollback()
                 raise ValueError(
                     f"Muscle group {muscle.muscle_group_id} does not exist"
                 )
@@ -125,6 +150,7 @@ def update_user_exercise(
 
 def delete_user_exercise(
     db: Session,
+    user_id: int,
     exercise_id: int,
 ) -> bool:
     exercise = get_exercise_by_id(
@@ -134,6 +160,11 @@ def delete_user_exercise(
 
     if exercise is None:
         return False
+
+    if exercise.source != "USER" or exercise.owner_id != user_id:
+        raise PermissionError(
+            "You do not have permission to delete this exercise"
+        )
 
     delete_exercise(
         db,
