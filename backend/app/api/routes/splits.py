@@ -123,33 +123,6 @@ def update_split(
         ) from exc
 
 
-@router.delete(
-    "/{split_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-def delete_split(
-    split_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        deleted = delete_user_split(
-            db=db,
-            user_id=current_user.id,
-            split_id=split_id,
-        )
-
-        if not deleted:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Split not found",
-            )
-
-    except PermissionError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        ) from exc
 
 
 @router.post(
@@ -249,31 +222,35 @@ def update_split_day(
 
 
 @router.delete(
-    "/{split_id}/days/{split_day_id}",
+    "/{split_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_split_day(
+def delete_split(
     split_id: int,
-    split_day_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        deleted = remove_day_from_split(
+        deleted = delete_user_split(
             db=db,
             user_id=current_user.id,
             split_id=split_id,
-            split_day_id=split_day_id,
         )
 
         if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Split day not found",
+                detail="Split not found",
             )
 
     except PermissionError as exc:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc

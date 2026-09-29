@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.models.split import Split
 from app.repositories.split import (
@@ -123,9 +124,17 @@ def delete_user_split(
     if split is None:
         return False
 
-    delete_split(
-        db=db,
-        split=split,
-    )
+    try:
+        delete_split(
+            db=db,
+            split=split,
+        )
+
+    except IntegrityError as exc:
+        db.rollback()
+
+        raise ValueError(
+            "Split is being used by a training plan and cannot be deleted"
+        ) from exc
 
     return True
