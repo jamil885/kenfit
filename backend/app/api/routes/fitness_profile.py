@@ -41,6 +41,10 @@ def create_profile(
             weight_kg=profile.weight_kg,
             fitness_level=profile.fitness_level,
             goal=profile.goal,
+            days_per_week=profile.days_per_week,
+            session_minutes=profile.session_minutes,
+            available_equipment=profile.available_equipment,
+            preferred_discipline=profile.preferred_discipline,
         )
 
     except ValueError as error:
@@ -72,6 +76,7 @@ def get_profile(
     return profile
 
 
+@router.patch("", response_model=FitnessProfileResponse)
 @router.put(
     "",
     response_model=FitnessProfileResponse,

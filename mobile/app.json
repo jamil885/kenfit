@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "KenFit",
+    "slug": "kenfit",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "kenfit",
+    "ios": { "supportsTablet": true },
+    "android": { "package": "com.kenfit.app" },
+    "plugins": ["expo-secure-store"],
+    "web": { "name": "KenFit", "bundler": "metro" }
+  }
+}

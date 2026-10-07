@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -26,7 +26,7 @@ class Exercise(Base):
     )
 
     discipline: Mapped[str] = mapped_column(
-        String(50),
+        ForeignKey("disciplines.code"),
         nullable=False,
     )
 
@@ -64,8 +64,13 @@ class Exercise(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
     )
+
+    owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True)
+    source: Mapped[str] = mapped_column(String(20), default="USER", nullable=False)
+    visibility: Mapped[str] = mapped_column(String(20), default="private", nullable=False)
+    parent_id: Mapped[int | None] = mapped_column(ForeignKey("exercises.id"))
 
     muscle_groups = relationship(
         "ExerciseMuscle",

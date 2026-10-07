@@ -1,22 +1,21 @@
-from fastapi import HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import InvalidTokenError
-
-
-from app.core.config import settings
-from fastapi import Depends
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.db.session import get_db
 from app.repositories.user import get_user_by_id
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 def decode_access_token(
     credentials: HTTPAuthorizationCredentials,
 ) -> int:
+    if credentials is None:
+        raise HTTPException(401, "Authentication required", headers={"WWW-Authenticate": "Bearer"})
     token = credentials.credentials
 
     try:
@@ -24,6 +23,7 @@ def decode_access_token(
             token,
             settings.jwt_secret_key,
             algorithms=[settings.jwt_algorithm],
+            options={"require": ["exp", "sub"]},
         )
 
     except InvalidTokenError as error:
@@ -51,6 +51,7 @@ def decode_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         ) from error
 
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
@@ -59,7 +60,7 @@ def get_current_user(
 
     user = get_user_by_id(db, user_id)
 
-    if user is None:
+    if user is None or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
