@@ -49,13 +49,14 @@ The first version will include:
 - Workout tracking
 - Progress tracking
 - Basic nutrition guidance
+- Food and calorie tracking
+- Editable calorie and macro targets
 
 ## Future Features
 
 - AI assistant
 - Adaptive workout plans
 - Advanced nutrition
-- Food tracking
 - Notifications
 - Gamification
 - Premium subscription

@@ -1,14 +1,17 @@
 from datetime import datetime
+from typing import ClassVar, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from app.schemas.common import Patch, Schema
 
 
-class ExerciseMuscleCreate(BaseModel):
+class ExerciseMuscleCreate(Schema):
     muscle_group_id: int
-    role: str = Field(min_length=1, max_length=20)
+    role: Literal["primary", "secondary"] = "primary"
 
 
-class ExerciseCreate(BaseModel):
+class ExerciseCreate(Schema):
     name: str = Field(min_length=2, max_length=100)
     description: str | None = None
 
@@ -21,12 +24,11 @@ class ExerciseCreate(BaseModel):
 
     instructions: str | None = None
 
-    muscle_groups: list[ExerciseMuscleCreate] = Field(
-    default_factory=list
-)
+    muscle_groups: list[ExerciseMuscleCreate] = Field(default_factory=list)
 
 
-class ExerciseUpdate(BaseModel):
+class ExerciseUpdate(Patch):
+    required_non_null: ClassVar = ("name", "discipline", "exercise_type", "muscle_groups")
     name: str | None = Field(default=None, min_length=2, max_length=100)
     description: str | None = None
 
@@ -62,7 +64,7 @@ class ExerciseUpdate(BaseModel):
     muscle_groups: list[ExerciseMuscleCreate] | None = None
 
 
-class ExerciseMuscleResponse(BaseModel):
+class ExerciseMuscleResponse(Schema):
     muscle_group_id: int
     role: str
 
@@ -71,7 +73,11 @@ class ExerciseMuscleResponse(BaseModel):
     }
 
 
-class ExerciseResponse(BaseModel):
+class ExerciseResponse(Schema):
+    owner_id: int | None
+    source: str
+    visibility: str
+    parent_id: int | None
     id: int
 
     name: str
@@ -88,9 +94,7 @@ class ExerciseResponse(BaseModel):
     is_active: bool
     created_at: datetime
 
-    muscle_groups: list[ExerciseMuscleResponse] = Field(
-    default_factory=list
-)
+    muscle_groups: list[ExerciseMuscleResponse] = Field(default_factory=list)
 
     model_config = {
         "from_attributes": True,

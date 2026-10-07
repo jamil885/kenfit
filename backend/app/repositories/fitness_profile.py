@@ -8,9 +8,7 @@ def get_fitness_profile_by_user_id(
     db: Session,
     user_id: int,
 ) -> FitnessProfile | None:
-    statement = select(FitnessProfile).where(
-        FitnessProfile.user_id == user_id
-    )
+    statement = select(FitnessProfile).where(FitnessProfile.user_id == user_id)
 
     return db.scalar(statement)
 
@@ -24,6 +22,7 @@ def create_fitness_profile(
     weight_kg: float,
     fitness_level: str,
     goal: str,
+    **preferences,
 ) -> FitnessProfile:
     fitness_profile = FitnessProfile(
         user_id=user_id,
@@ -33,6 +32,7 @@ def create_fitness_profile(
         weight_kg=weight_kg,
         fitness_level=fitness_level,
         goal=goal,
+        **preferences,
     )
 
     db.add(fitness_profile)
@@ -40,6 +40,7 @@ def create_fitness_profile(
     db.refresh(fitness_profile)
 
     return fitness_profile
+
 
 def update_fitness_profile(
     db: Session,

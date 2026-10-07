@@ -1,12 +1,12 @@
 from datetime import date
 
 from sqlalchemy.orm import Session
+
 from app.repositories.fitness_profile import (
     create_fitness_profile,
     get_fitness_profile_by_user_id,
     update_fitness_profile,
 )
-
 
 
 def register_fitness_profile(
@@ -18,6 +18,7 @@ def register_fitness_profile(
     weight_kg: float,
     fitness_level: str,
     goal: str,
+    **preferences,
 ):
     existing_profile = get_fitness_profile_by_user_id(
         db,
@@ -36,6 +37,7 @@ def register_fitness_profile(
         weight_kg=weight_kg,
         fitness_level=fitness_level,
         goal=goal,
+        **preferences,
     )
 
 
@@ -47,6 +49,7 @@ def get_user_fitness_profile(
         db,
         user_id,
     )
+
 
 def update_user_fitness_profile(
     db: Session,

@@ -68,3 +68,9 @@ Thumbs.db
 # =========================
 
 docker-data/
+# Local database backups and test artifacts
+*.dump
+*.db
+*.sqlite*
+.pytest_cache/
+.ruff_cache/

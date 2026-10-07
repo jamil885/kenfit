@@ -19,11 +19,7 @@ def get_exercise_by_id(
     db: Session,
     exercise_id: int,
 ) -> Exercise | None:
-    result = db.execute(
-        select(Exercise).where(
-            Exercise.id == exercise_id
-        )
-    )
+    result = db.execute(select(Exercise).where(Exercise.id == exercise_id))
 
     return result.scalar_one_or_none()
 
@@ -31,11 +27,7 @@ def get_exercise_by_id(
 def get_exercises(
     db: Session,
 ) -> list[Exercise]:
-    result = db.execute(
-        select(Exercise)
-        .where(Exercise.is_active.is_(True))
-        .order_by(Exercise.id)
-    )
+    result = db.execute(select(Exercise).where(Exercise.is_active.is_(True)).order_by(Exercise.id))
 
     return list(result.scalars().all())
 

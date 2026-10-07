@@ -1,143 +1,82 @@
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from fastapi import HTTPException
 
 from app.models.exercise import Exercise
 from app.models.exercise_muscle import ExerciseMuscle
 from app.models.muscle_group import MuscleGroup
-from app.repositories.exercise import (
-    create_exercise,
-    get_exercise_by_id,
-    get_exercises,
-    update_exercise,
-    delete_exercise,
-)
-from app.schemas.exercise import ExerciseCreate, ExerciseUpdate
+from app.repositories.content import list_content
+from app.services.content import archive, owned, readable, save
 
 
-def create_user_exercise(
-    db: Session,
-    data: ExerciseCreate,
-) -> Exercise:
-    exercise = Exercise(
-        name=data.name,
-        description=data.description,
-        discipline=data.discipline,
-        modality=data.modality,
-        exercise_type=data.exercise_type,
-        equipment=data.equipment,
-        difficulty=data.difficulty,
-        instructions=data.instructions,
+def validate_muscles(db, muscles):
+    ids = [m.muscle_group_id for m in muscles]
+    if len(ids) != len(set(ids)):
+        raise HTTPException(422, "Duplicate muscle groups")
+    if any(db.get(MuscleGroup, i) is None for i in ids):
+        raise HTTPException(422, "Unknown muscle group")
+
+
+def create_user_exercise(db, data, user_id):
+    from app.services.discipline import ensure_discipline
+
+    ensure_discipline(db, data.discipline)
+    validate_muscles(db, data.muscle_groups)
+    obj = Exercise(
+        **data.model_dump(exclude={"muscle_groups"}),
+        owner_id=user_id,
+        source="USER",
+        visibility="private",
     )
-
-    db.add(exercise)
-    db.flush()
-
-    for muscle in data.muscle_groups:
-        muscle_group = db.execute(
-            select(MuscleGroup).where(
-                MuscleGroup.id == muscle.muscle_group_id
-            )
-        ).scalar_one_or_none()
-
-        if muscle_group is None:
-            raise ValueError(
-                f"Muscle group {muscle.muscle_group_id} does not exist"
-            )
-
-        exercise_muscle = ExerciseMuscle(
-            exercise_id=exercise.id,
-            muscle_group_id=muscle.muscle_group_id,
-            role=muscle.role,
-        )
-
-        db.add(exercise_muscle)
-
-    db.commit()
-    db.refresh(exercise)
-
-    return exercise
+    obj.muscle_groups = [ExerciseMuscle(**m.model_dump()) for m in data.muscle_groups]
+    return save(db, obj)
 
 
-def get_exercise(
-    db: Session,
-    exercise_id: int,
-) -> Exercise | None:
-    return get_exercise_by_id(
-        db,
-        exercise_id,
-    )
+def get_exercise(db, exercise_id, user_id):
+    return readable(db, Exercise, exercise_id, user_id)
 
 
-def list_exercises(
-    db: Session,
-) -> list[Exercise]:
-    return get_exercises(db)
+def list_exercises(db, user_id, offset=0, limit=50, search=None):
+    return list_content(db, Exercise, user_id, offset, limit, search)
 
 
-def update_user_exercise(
-    db: Session,
-    exercise_id: int,
-    data: ExerciseUpdate,
-) -> Exercise | None:
-    exercise = get_exercise_by_id(
-        db,
-        exercise_id,
-    )
-
-    if exercise is None:
-        return None
-
-    update_data = data.model_dump(
-        exclude_unset=True,
-        exclude={"muscle_groups"},
-    )
-
-    for field, value in update_data.items():
-        setattr(exercise, field, value)
-
+def update_user_exercise(db, exercise_id, data, user_id):
+    obj = owned(db, Exercise, exercise_id, user_id)
     if data.muscle_groups is not None:
-        exercise.muscle_groups.clear()
+        validate_muscles(db, data.muscle_groups)
+    if data.discipline is not None:
+        from app.services.discipline import ensure_discipline
 
-        for muscle in data.muscle_groups:
-            muscle_group = db.execute(
-                select(MuscleGroup).where(
-                    MuscleGroup.id == muscle.muscle_group_id
-                )
-            ).scalar_one_or_none()
+        ensure_discipline(db, data.discipline)
+    for k, v in data.model_dump(exclude_unset=True, exclude={"muscle_groups"}).items():
+        setattr(obj, k, v)
+    if data.muscle_groups is not None:
+        obj.muscle_groups = [ExerciseMuscle(**m.model_dump()) for m in data.muscle_groups]
+    return save(db, obj)
 
-            if muscle_group is None:
-                raise ValueError(
-                    f"Muscle group {muscle.muscle_group_id} does not exist"
-                )
 
-            exercise.muscle_groups.append(
-                ExerciseMuscle(
-                    muscle_group_id=muscle.muscle_group_id,
-                    role=muscle.role,
-                )
-            )
+def delete_user_exercise(db, exercise_id, user_id):
+    archive(db, Exercise, exercise_id, user_id)
 
-    return update_exercise(
-        db,
-        exercise,
+
+def duplicate(db, exercise_id, user_id):
+    old = readable(db, Exercise, exercise_id, user_id)
+    fields = (
+        "name",
+        "description",
+        "discipline",
+        "modality",
+        "exercise_type",
+        "equipment",
+        "difficulty",
+        "instructions",
     )
-
-
-def delete_user_exercise(
-    db: Session,
-    exercise_id: int,
-) -> bool:
-    exercise = get_exercise_by_id(
-        db,
-        exercise_id,
+    obj = Exercise(
+        **{k: getattr(old, k) for k in fields},
+        owner_id=user_id,
+        source="USER",
+        visibility="private",
+        parent_id=old.id,
     )
-
-    if exercise is None:
-        return False
-
-    delete_exercise(
-        db,
-        exercise,
-    )
-
-    return True
+    obj.muscle_groups = [
+        ExerciseMuscle(muscle_group_id=m.muscle_group_id, role=m.role) for m in old.muscle_groups
+    ]
+    return save(db, obj)

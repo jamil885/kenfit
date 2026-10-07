@@ -1,27 +1,20 @@
 services:
-
   postgres:
     image: postgres:17
     container_name: kenfit-postgres
     restart: unless-stopped
-
     environment:
-      POSTGRES_DB: kenfit
-      POSTGRES_USER: kenfit
-      POSTGRES_PASSWORD: change_me
-
+      POSTGRES_DB: ${POSTGRES_DB:-kenfit}
+      POSTGRES_USER: ${POSTGRES_USER:-kenfit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     ports:
-      - "5433:5432"
-
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kenfit -d kenfit"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 5
-
-
 volumes:
   postgres_data:

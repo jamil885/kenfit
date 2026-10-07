@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import Date, Float, ForeignKey, String
+from sqlalchemy import JSON, Date, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -49,4 +49,13 @@ class FitnessProfile(Base):
     goal: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
+    )
+
+    days_per_week: Mapped[int] = mapped_column(Integer, default=3, server_default="3")
+    session_minutes: Mapped[int] = mapped_column(Integer, default=45, server_default="45")
+    available_equipment: Mapped[list[str]] = mapped_column(
+        JSON, default=lambda: ["bodyweight"], server_default='["bodyweight"]'
+    )
+    preferred_discipline: Mapped[str] = mapped_column(
+        String(50), default="strength", server_default="strength"
     )
