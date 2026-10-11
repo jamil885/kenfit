@@ -38,6 +38,9 @@ async function setup() {
     DATABASE_URL: "sqlite:///" + path.join(temp, "test.db").replace(/\\/g, "/"),
     JWT_SECRET_KEY: "test-integration-secret-at-least-32-characters",
     CORS_ORIGINS: JSON.stringify([webUrl]),
+    APP_ENV: "development",
+    MAIL_MODE: "file",
+    MAIL_OUTBOX: path.join(temp, "mail"),
   };
   for (const args of [
     ["-m", "alembic", "upgrade", "head"],
@@ -349,6 +352,7 @@ async function ready(url) {
       .last()
       .waitFor();
     console.log("Real custom workout creation + editing work");
+    await page.reload();
 
     if (errors.length) throw new Error("Browser errors: " + errors.join("; "));
     const api = await fetch(apiUrl + "/auth/login", {
@@ -362,8 +366,84 @@ async function ready(url) {
     );
     if (summary.workouts_completed !== 1 || summary.latest_weight_kg !== 74.5)
       throw new Error("API data did not match UI actions");
+    await page
+      .getByRole("button", { name: "Olvidé mi contraseña", exact: true })
+      .click();
+    await page
+      .getByRole("textbox", { name: "Correo de recuperación", exact: true })
+      .fill(email);
+    await page
+      .getByRole("button", { name: "Solicitar código", exact: true })
+      .click();
+    await page
+      .getByRole("textbox", { name: "Código de recuperación", exact: true })
+      .waitFor();
+    const mailbox = path.join(temp, "mail");
+    const letters = fs
+      .readdirSync(mailbox)
+      .filter((file) => file.endsWith(".eml"));
+    const code = fs
+      .readFileSync(path.join(mailbox, letters[0]), "utf8")
+      .match(/^[A-Za-z0-9_-]{43}$/m)?.[0];
+    if (!code) throw new Error("Recovery code missing from local test mailbox");
+    await page
+      .getByRole("textbox", { name: "Código de recuperación", exact: true })
+      .fill(code);
+    await page
+      .getByRole("textbox", { name: "Nueva contraseña", exact: true })
+      .fill("Recovered123!");
+    await page
+      .getByRole("textbox", { name: "Repite la nueva contraseña", exact: true })
+      .fill("Recovered123!");
+    await page
+      .getByRole("button", { name: "Actualizar contraseña", exact: true })
+      .click();
+    await page
+      .getByText(
+        "Contraseña actualizada. Inicia sesión con tu nueva contraseña; se cerraron las sesiones anteriores.",
+        { exact: true },
+      )
+      .waitFor();
+    if ((await fetch(apiUrl + "/auth/me", { headers })).status !== 401)
+      throw new Error("Password reset did not revoke the original session");
+    await page
+      .getByRole("button", { name: "Volver al acceso", exact: true })
+      .click();
+    await page
+      .getByRole("textbox", { name: "Correo electrónico", exact: true })
+      .fill(email);
+    await page
+      .getByRole("textbox", { name: "Contraseña", exact: true })
+      .fill("Recovered123!");
+    await page
+      .getByRole("button", { name: "Iniciar sesión", exact: true })
+      .click();
+    await page.getByRole("tab", { name: "Perfil" }).click();
+    await page
+      .getByRole("button", { name: "Eliminar mi cuenta", exact: true })
+      .click();
+    await page
+      .getByRole("textbox", { name: "Contraseña actual", exact: true })
+      .fill("Recovered123!");
+    await page
+      .getByRole("textbox", { name: "Escribe ELIMINAR", exact: true })
+      .fill("ELIMINAR");
+    await page
+      .getByRole("button", { name: "Eliminar definitivamente", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Iniciar sesión", exact: true })
+      .waitFor();
+    const deletedLogin = await fetch(apiUrl + "/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password: "Recovered123!" }),
+    });
+    if (deletedLogin.status !== 401)
+      throw new Error("Deleted account can still sign in");
+    if (errors.length) throw new Error("Browser errors: " + errors.join("; "));
     console.log(
-      "PASS: 5 demo screens and all core live API flows; no page errors.",
+      "PASS: core live API flows, password recovery, session revocation and account deletion; no page errors.",
     );
     console.log(JSON.stringify({ checkboxCount, summary, errors }));
   } finally {

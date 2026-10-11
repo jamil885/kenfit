@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, String
+from sqlalchemy import Boolean, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -23,4 +23,8 @@ class User(Base):
         Boolean,
         default=True,
         nullable=False,
+    )
+
+    token_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0", default=0
     )

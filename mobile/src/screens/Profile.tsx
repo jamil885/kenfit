@@ -1,3 +1,4 @@
+import { DeleteAccount } from "../components/DeleteAccount";
 import { useState } from "react";
 import { Text, View } from "react-native";
 import {
@@ -258,6 +259,7 @@ export function ProfileScreen() {
         disabled={busy}
         onPress={() => void signOut()}
       />
+      <DeleteAccount />
     </Screen>
   );
 }

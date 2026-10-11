@@ -13,7 +13,7 @@ security = HTTPBearer(auto_error=False)
 
 def decode_access_token(
     credentials: HTTPAuthorizationCredentials,
-) -> int:
+) -> tuple[int, int]:
     if credentials is None:
         raise HTTPException(401, "Authentication required", headers={"WWW-Authenticate": "Bearer"})
     token = credentials.credentials
@@ -43,7 +43,7 @@ def decode_access_token(
         )
 
     try:
-        return int(user_id)
+        return int(user_id), int(payload.get("ver", 0))
     except (TypeError, ValueError) as error:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -56,7 +56,7 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ):
-    user_id = decode_access_token(credentials)
+    user_id, token_version = decode_access_token(credentials)
 
     user = get_user_by_id(db, user_id)
 
@@ -67,4 +67,6 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    if token_version != user.token_version:
+        raise HTTPException(401, "Invalid or expired token", headers={"WWW-Authenticate": "Bearer"})
     return user

@@ -29,6 +29,13 @@ export function errorDetail(value: unknown): string {
       "Email already registered": "Ese correo ya está registrado.",
       "Create a fitness profile first": "Completa tu perfil primero.",
       "Content not found": "El contenido ya no está disponible.",
+      "Invalid or expired recovery code":
+        "El código es inválido, venció o ya se utilizó.",
+      "Password recovery is not configured":
+        "La recuperación por correo aún no está habilitada. Contacta con soporte.",
+      "Incorrect current password": "La contraseña actual es incorrecta.",
+      "Too many attempts. Try again later.":
+        "Demasiados intentos. Espera una hora antes de volver a intentar.",
       "Food not found": "El alimento ya no está disponible.",
     };
     return translations[value] || value;

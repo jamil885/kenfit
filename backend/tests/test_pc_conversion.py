@@ -76,7 +76,7 @@ def test_pc_conversion_dry_run_commit_and_sequences():
     archive = report["archive_schema"]
     try:
         with engine.begin() as conn:
-            assert conn.scalar(sa.text("SELECT version_num FROM alembic_version")) == "9c4a10b2d7ef"
+            assert conn.scalar(sa.text("SELECT version_num FROM alembic_version")) == "b37a84d915c2"
             assert (
                 conn.scalar(sa.text("SELECT password_hash FROM users WHERE id=10"))
                 == "retained-hash"

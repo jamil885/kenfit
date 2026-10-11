@@ -1,3 +1,4 @@
+import { Recovery } from "../components/Recovery";
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -160,6 +161,7 @@ export function AuthScreen() {
             </Text>
           </Text>
         </Pressable>
+        {!register && <Recovery />}
         <Button
           title="Explorar demostración"
           secondary
