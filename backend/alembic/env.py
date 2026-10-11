@@ -15,6 +15,7 @@ from app.models.workout_exercise import WorkoutExercise
 from app.models.split import Split
 from app.models.split_day import SplitDay
 from app.models.training_plan import TrainingPlan
+from app.models.training_session import TrainingSession
 config = context.config
 
 if config.config_file_name is not None:
