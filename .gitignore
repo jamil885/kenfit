@@ -75,3 +75,6 @@ docker-data/
 .pytest_cache/
 .ruff_cache/
 
+
+# Private local recovery emails
+.local-mail/

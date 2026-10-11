@@ -44,12 +44,13 @@ def register_user(
     )
 
 
-def create_access_token(user_id: int) -> str:
+def create_access_token(user_id: int, token_version: int = 0) -> str:
     expires_at = datetime.now(timezone.utc) + timedelta(
         minutes=settings.access_token_expire_minutes
     )
     payload = {
         "sub": str(user_id),
+        "ver": token_version,
         "exp": expires_at,
     }
     return jwt.encode(
