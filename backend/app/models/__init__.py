@@ -15,4 +15,5 @@ from app.models.training import (
     WorkoutExercise,
     WorkoutLog,
 )
+from app.models.training_session import TrainingSession
 from app.models.user import User

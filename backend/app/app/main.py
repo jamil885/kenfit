@@ -14,6 +14,7 @@ from app.api.routes import (
     recommendations,
     splits,
     training_plans,
+    training_sessions,
     workouts,
 )
 from app.core.config import settings
@@ -38,6 +39,7 @@ for module in (
     workouts,
     splits,
     training_plans,
+    training_sessions,
     history,
     nutrition,
     recommendations,
